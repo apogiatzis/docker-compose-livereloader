@@ -1,0 +1,17 @@
+version: '3'
+
+services:
+  test-service:
+    container_name: test-container-name  
+
+  live-reloader:
+    image: livereloading
+    container_name: livereloader
+    privileged: true
+    environment:
+      - RELOAD_DELAY=1.5              # seconds
+      - RELOAD_CONTAINER=test-container-name
+      - RELOAD_DIR=/code
+    volumes:
+      - "/var/run/docker.sock:/var/run/docker.sock"
+      - ".:/code"

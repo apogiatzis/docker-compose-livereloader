@@ -1,0 +1,12 @@
+version: '3'
+
+services:
+
+  test-service:
+    image: ubuntu
+    volumes:
+      - ".:/code"
+    working_dir: "/code"
+    command: ./command.sh
+
+  
