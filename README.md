@@ -28,7 +28,7 @@ version: '3'
 services:
 
     live-reloader:
-        image: livereloading
+        image: apogiatzis/livereloading
         container_name: livereloader
         privileged: true
         environment:
@@ -104,7 +104,7 @@ services:
     container_name: test-container-name  
 
   live-reloader:
-    image: livereloading
+    image: apogiatzis/livereloading
     container_name: livereloader
     privileged: true
     environment:

@@ -35,7 +35,7 @@ class Reloader(object):
             """
             Callback to react on any wathcdog filesystem event.
             """
-            logger.info("Reloading Event: {0}", event)
+            logger.info(event)
             self.shcedule_reload(
                 self.get_target_container()
             )
