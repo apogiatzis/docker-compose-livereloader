@@ -1,17 +1,54 @@
-version: '3'
+version: "3"
 
 services:
-  test-service:
-    container_name: test-container-name  
+  label1-service:
+    container_name: label1-service
+    labels:
+      - live-reload
+    image: ubuntu
+    volumes:
+      - ".:/code"
+    working_dir: "/code"
+    command: ./command.sh
+
+  label2-service:
+    container_name: label2-service
+    labels:
+      - live-reload
+    image: ubuntu
+    volumes:
+      - ".:/code"
+    working_dir: "/code"
+    command: ./command.sh
+
+  named-service:
+    container_name: named-service
+    labels:
+      - live-reload
+    image: ubuntu
+    volumes:
+      - ".:/code"
+    working_dir: "/code"
+    command: ./command.sh
+
+  not-reloading-service:
+    container_name: not-reloading-service
+    image: ubuntu
+    volumes:
+      - ".:/code"
+    working_dir: "/code"
+    command: ./command.sh
 
   live-reloader:
-    image: apogiatzis/livereloading
+    image: stratosgear/livereloading
     container_name: livereloader
     privileged: true
     environment:
-      - RELOAD_DELAY=1.5              # seconds
-      - RELOAD_CONTAINER=test-container-name
-      - RELOAD_DIR=/code
+      - RELOAD_DELAY=2 # seconds
+      - RELOAD_CONTAINER=named-service
+      # - RELOAD_DIRS=/code
+      - RESTART_TIMEOUT=1
+      - RELOAD_LABEL=live-reload
     volumes:
       - "/var/run/docker.sock:/var/run/docker.sock"
-      - ".:/code"
+      # - ".:/code"

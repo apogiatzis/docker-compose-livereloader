@@ -7,38 +7,40 @@ from os import environ
 from watchdog.events import PatternMatchingEventHandler
 from watchdog.observers import Observer
 
-logging.basicConfig(format='%(asctime)s,%(msecs)d %(name)s %(levelname)s %(message)s',
-                    datefmt='%H:%M:%S',
-                    level=logging.INFO)
+logging.basicConfig(
+    format="%(asctime)s,%(msecs)d %(name)s %(levelname)s %(message)s",
+    datefmt="%H:%M:%S",
+    level=logging.INFO,
+)
 
 logger = logging.getLogger("reloader")
 
-RELOAD_DELAY = float(environ.get("RELOAD_DELAY", 1.5))
-RELOAD_CONTAINER = environ.get("RELOAD_CONTAINER")
-RELOAD_DIR = environ.get("RELOAD_DIR")
 
 class Reloader(object):
-
     def __init__(self):
         self.init_docker()
         self.last_reload_thread = None
+        self.reload_dirs = self.get_target_dirs()
+        self.reload_delay = float(environ.get("RELOAD_DELAY", 1.5))
+        self.restart_timeout = int(environ.get("RESTART_TIMEOUT", 10))
+        self.reload_container = environ.get("RELOAD_CONTAINER")
 
-    def event_handler_factory(self, *args, patterns=["*"], ignore_directories=True, **kwargs):
+    def event_handler_factory(
+        self, *args, patterns=["*"], ignore_directories=True, **kwargs
+    ):
         event_handler = PatternMatchingEventHandler(
-            *args,
-            patterns=patterns,
-            ignore_directories=ignore_directories,
-            **kwargs
+            *args, patterns=patterns, ignore_directories=ignore_directories, **kwargs
         )
 
         def on_any_event_callback(event):
             """
-            Callback to react on any wathcdog filesystem event.
+            Callback to react on any watchdog filesystem event.
             """
-            logger.info(event)
-            self.shcedule_reload(
-                self.get_target_container()
-            )
+            containers = self.get_target_containers()
+            if containers:
+                logger.info(event)
+                logger.info(f"Scheduling reloading of containers")
+                self.scheduled_reload(containers)
 
         event_handler.on_any_event = on_any_event_callback
         return event_handler
@@ -47,73 +49,85 @@ class Reloader(object):
         """
         Initializes docker client with binded docker socket.
         """
-        self.client = docker.DockerClient(base_url='unix://var/run/docker.sock')
+        self.client = docker.DockerClient(base_url="unix://var/run/docker.sock")
 
-    def get_target_dir(self):
+    def get_target_dirs(self):
         """
         Returns a the target directory to be monitored in this order:
             1. If the RELOAD_DIR environment variable is set, uses that.
             2. Otherwise it attempts to derive the directory from mounted directories on the container
         """
-        dir_to_watch = environ.get("RELOAD_DIR", None)
-        if dir_to_watch is not None:
-            return dir_to_watch
+        dirs = environ.get("RELOAD_DIR", None)
+        if dirs is not None:
+            dirs = [x.strip() for x in dirs.split(",")]
+            return dirs
 
-        container = self.client.containers.list(filters={
-            "name": "livereloader"
-        })[0]
+        container = self.client.containers.list(filters={"name": "livereloader"})[0]
+
+        dir_to_watch = None
         for mount in container.attrs["Mounts"]:
-            if "/var/run/docker.sock" not in mount["Destination"] and "/reloader" not in mount["Destination"]:
+            if (
+                "/var/run/docker.sock" not in mount["Destination"]
+                and "/reloader" not in mount["Destination"]
+            ):
                 dir_to_watch = mount["Destination"]
-        
-        return dir_to_watch
 
-    def get_target_container(self):
+        return [dir_to_watch] if dir_to_watch else None
+
+    def get_target_containers(self):
         """
         Returns a docker container instance if exists, based on the RELOAD_CONTAINER
         environment variable.
         """
-        container = self.client.containers.list(filters={
-            "name": RELOAD_CONTAINER
-        })
-        if len(container) == 0:
-            raise Exception("Container to reload not found. Have you set RELOAD_CONTAINER variable? (Or is it runnng?)")
-        return container[0]
+        container = self.client.containers.list(filters={"name": self.reload_container})
 
-    def shcedule_reload(self, container):
+        by_name = [container[0]] if container else []
+
+        by_labels = []
+        label = environ.get("RELOAD_LABEL", None)
+        if label:
+            by_labels = self.client.containers.list(
+                filters={"label": label, "status": "running"}
+            )
+
+        return list(set(by_name + by_labels))
+
+    def scheduled_reload(self, containers):
         """
         Schedules a thread to reload the container based on the given RELOAD DELAY.
         It overwrites any previously scheduled reloading threads.
         """
-        def container_reload():
+
+        def containers_reload():
             """
-            Restarts given container and reports any errors.
+            Restarts given containers and reports any errors.
             """
-            logger.info("Reloading container: {0}".format(container.name))
             try:
-                container.restart()
+                for container in containers:
+                    logger.info("Reloading container: {0}".format(container.name))
+                    container.restart(timeout=self.restart_timeout)
             except Exception as e:
                 logger.error("Something went wrong while reloading: ")
                 logger.error(e)
-        
+
+        # if containers:
         if self.last_reload_thread:
             self.last_reload_thread.cancel()
         del self.last_reload_thread
-        self.last_reload_thread = threading.Timer(RELOAD_DELAY, container_reload)
+        self.last_reload_thread = threading.Timer(self.reload_delay, containers_reload)
         self.last_reload_thread.start()
-    
+
     def start(self):
         """
         Runs watchdog process to monitor file changes and reload container
         """
         observer = Observer()
-        observer.schedule(
-            self.event_handler_factory(),
-            self.get_target_dir(),
-            recursive=True
-        )
-        observer.start()
-
+        if self.reload_dirs:
+            for a_dir in self.reload_dirs:
+                observer.schedule(self.event_handler_factory(), a_dir, recursive=True)
+                observer.start()
+        else:
+            logger.error("Did not find any source code paths to monitor!!")
         try:
             while True:
                 time.sleep(1)
