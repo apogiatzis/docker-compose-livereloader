@@ -58,6 +58,7 @@ services:
             - RELOAD_DELAY=<DELAY>              # seconds
             - RESTART_TIMEOUT=<TIMEOUT>         # seconds
             - RELOAD_DIR=<DIRS_TO_WATCH>
+            - OBSERVER_TYPE=<TYPE> 
         volumes:
             - "/var/run/docker.sock:/var/run/docker.sock"
             - "<SOURCE CODE DIR>:<DIRECTORY_TO_MOUNT_CODE>"
@@ -173,6 +174,13 @@ docker-compoe service. Here is a list of the available configuration variables:
   from the mount directory in the livereloader service but in case you want to
   explicitly set it, this environment variable can be used.  (Required: False, Default:
   \<Mount Directory in Docker-compose\>)
+- **OBSERVER_TYPE**: The type of observer to use. Supports two types: standard (0) and 
+  polling (1). Mounting your windows code directory into a linux container may cause 
+  the standard observer not to see changes made on the windows side ('inotify' is 
+  not triggered). The polling observer will trigger although at a slower pace. 
+  Another workaround suggests using the 'docker-windows-volume-watcher' package. 
+  (Required: False, Default: 0)
+
 
 # Contribute
 
