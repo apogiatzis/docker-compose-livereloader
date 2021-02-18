@@ -6,6 +6,8 @@ import time
 from os import environ
 from watchdog.events import PatternMatchingEventHandler
 from watchdog.observers import Observer
+from watchdog.observers.polling import PollingObserver
+
 
 logging.basicConfig(
     format="%(asctime)s,%(msecs)d %(name)s %(levelname)s %(message)s",
@@ -24,6 +26,7 @@ class Reloader(object):
         self.reload_delay = float(environ.get("RELOAD_DELAY", 1.5))
         self.restart_timeout = int(environ.get("RESTART_TIMEOUT", 10))
         self.reload_container = environ.get("RELOAD_CONTAINER")
+        self.observer_type = int(environ.get("OBSERVER_TYPE",0))
 
     def event_handler_factory(
         self, *args, patterns=["*"], ignore_directories=True, **kwargs
@@ -121,7 +124,12 @@ class Reloader(object):
         """
         Runs watchdog process to monitor file changes and reload container
         """
-        observer = Observer()
+
+        if self.observer_type == 0:
+            observer = Observer()
+        elif self.observer_type == 1:
+            observer = PollingObserver()
+
         if self.reload_dirs:
             for a_dir in self.reload_dirs:
                 observer.schedule(self.event_handler_factory(), a_dir, recursive=True)

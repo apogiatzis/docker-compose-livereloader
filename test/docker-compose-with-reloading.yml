@@ -49,6 +49,7 @@ services:
       # - RELOAD_DIRS=/code
       - RESTART_TIMEOUT=1
       - RELOAD_LABEL=live-reload
+      - OBSERVER_TYPE=0 # standard = 0, polling = 1
     volumes:
       - "/var/run/docker.sock:/var/run/docker.sock"
       # - ".:/code"
