@@ -65,17 +65,18 @@ class Reloader(object):
             dirs = [x.strip() for x in dirs.split(",")]
             return dirs
 
-        container = self.client.containers.list(filters={"name": "livereloader"})[0]
+        container = self.client.containers.list(filters={"name": "reloader"})[0]
 
-        dir_to_watch = None
+        dirs_to_watch = []
         for mount in container.attrs["Mounts"]:
             if (
                 "/var/run/docker.sock" not in mount["Destination"]
                 and "/reloader" not in mount["Destination"]
             ):
-                dir_to_watch = mount["Destination"]
+                logger.info(f'Watching directory: {mount["Destination"]}')
+                dirs_to_watch.append(mount["Destination"])
 
-        return [dir_to_watch] if dir_to_watch else None
+        return dirs_to_watch if dirs_to_watch else None
 
     def get_target_containers(self):
         """
@@ -133,7 +134,7 @@ class Reloader(object):
         if self.reload_dirs:
             for a_dir in self.reload_dirs:
                 observer.schedule(self.event_handler_factory(), a_dir, recursive=True)
-                observer.start()
+            observer.start()
         else:
             logger.error("Did not find any source code paths to monitor!!")
         try:
