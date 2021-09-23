@@ -27,6 +27,7 @@ class Reloader(object):
         self.restart_timeout = int(environ.get("RESTART_TIMEOUT", 10))
         self.reload_container = environ.get("RELOAD_CONTAINER")
         self.observer_type = int(environ.get("OBSERVER_TYPE",0))
+        self.must_run = int(environ.get("MUST_RUN", 1))
 
     def event_handler_factory(
         self, *args, patterns=["*"], ignore_directories=True, **kwargs
@@ -90,9 +91,17 @@ class Reloader(object):
         by_labels = []
         label = environ.get("RELOAD_LABEL", None)
         if label:
-            by_labels = self.client.containers.list(
-                filters={"label": label, "status": "running"}
-            )
+            if self.must_run == 1:
+                by_labels = self.client.containers.list(
+                    filters={"label": label, "status": "running"}
+                )
+            else:
+                by_labels = self.client.containers.list(
+                    filters={"label": label}
+                )
+                by_labels.extend(self.client.containers.list(
+                    filters={"label": label, "status": "exited"}
+                ))
 
         return list(set(by_name + by_labels))
 
