@@ -59,6 +59,7 @@ services:
             - RESTART_TIMEOUT=<TIMEOUT>         # seconds
             - RELOAD_DIR=<DIRS_TO_WATCH>
             - OBSERVER_TYPE=<TYPE> 
+            - MUST_RUN=<BOOLEAN>
         volumes:
             - "/var/run/docker.sock:/var/run/docker.sock"
             - "<SOURCE CODE DIR>:<DIRECTORY_TO_MOUNT_CODE>"
@@ -180,6 +181,8 @@ docker-compoe service. Here is a list of the available configuration variables:
   not triggered). The polling observer will trigger although at a slower pace. 
   Another workaround suggests using the 'docker-windows-volume-watcher' package. 
   (Required: False, Default: 0)
+- **MUST_RUN**: If it should restart running containers only (1) yes (0) no
+  (Required: False, Default: 1)
 
 
 # Contribute
