@@ -2,6 +2,7 @@ import logging
 import docker
 import threading
 import time
+import platform
 
 from os import environ
 from watchdog.events import PatternMatchingEventHandler
@@ -28,6 +29,13 @@ class Reloader(object):
         self.reload_container = environ.get("RELOAD_CONTAINER")
         self.observer_type = int(environ.get("OBSERVER_TYPE",0))
         self.must_run = int(environ.get("MUST_RUN", 1))
+
+    @staticmethod
+    def _get_own_container_id():
+        """
+        Identifies reloader own container id, in cases we want to run multiple reloaders.
+        """
+        return platform.node()
 
     def event_handler_factory(
         self, *args, patterns=["*"], ignore_directories=True, **kwargs
@@ -66,7 +74,7 @@ class Reloader(object):
             dirs = [x.strip() for x in dirs.split(",")]
             return dirs
 
-        container = self.client.containers.list(filters={"name": "reloader"})[0]
+        container = self.client.containers.get(container_id=self._get_own_container_id())
 
         dirs_to_watch = []
         for mount in container.attrs["Mounts"]:
@@ -83,8 +91,10 @@ class Reloader(object):
         """
         Returns a docker container instance if exists, based on the RELOAD_CONTAINER
         environment variable.
+        Enforces exact match for name, by using regex ^/nRELOAD_CONTAINER$
+        To target multiple reload targets, RELOAD_LABEL is used.
         """
-        container = self.client.containers.list(filters={"name": self.reload_container})
+        container = self.client.containers.list(filters={"name": f"^/{self.reload_container}$"})
 
         by_name = [container[0]] if container else []
 
