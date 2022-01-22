@@ -8,5 +8,3 @@ services:
       - ".:/code"
     working_dir: "/code"
     command: ./command.sh
-
-  

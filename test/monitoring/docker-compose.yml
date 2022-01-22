@@ -1,0 +1,88 @@
+version: '3'
+
+volumes:
+  grafana_data:
+  prometheus_data:
+  influxdb_data:
+
+services:
+
+  grafana:
+    image: grafana/grafana
+    container_name: grafana
+    labels:
+      reload.grafana: "true"
+      single.reload: "true"
+    environment:
+      - GF_USERS_DEFAULT_THEME=light
+      - GF_SECURITY_ADMIN_PASSWORD=grafanaAdmin
+      - GF_INSTALL_PLUGINS=grafana-clock-panel, grafana-piechart-panel
+      - GF_USERS_ALLOW_SIGN_UP="false"
+    expose:
+      - 3000
+    ports:
+      - 3000:3000
+    volumes:
+      - ./grafana/dashboards/dashboards.yml:/etc/grafana/provisioning/dashboards/dashboards.yml
+      - ./grafana/datasources/prometheus.yml:/etc/grafana/provisioning/datasources/prometheus.yml
+      - ./grafana-dashboards/docker-dashboards:/mnt/docker-dashboards
+      - grafana_data:/var/lib/grafana
+
+  grafana_barebones:
+    image: grafana/grafana
+    container_name: grafana_barebones
+    labels:
+      reload.grafana: "true"
+    environment:
+      - GF_USERS_DEFAULT_THEME=dark
+      - GF_SECURITY_ADMIN_PASSWORD=grafanaAdmin
+    expose:
+      - 3000
+    ports:
+      - 3001:3000
+    volumes:
+      - ./grafana/datasources/prometheus.yml:/etc/grafana/provisioning/datasources/prometheus.yml
+
+  prometheus:
+    image: prom/prometheus
+    container_name: prometheus
+    labels:
+      single.reload: "true"
+    expose:
+      - 9090
+    ports:
+      - 9090:9090
+    volumes:
+      - ./prometheus/prometheus.yml:/etc/prometheus/prometheus.yml
+      - prometheus_data:/prometheus
+
+  influxdb:
+    image: tutum/influxdb:0.9
+    container_name: influxdb
+    environment:
+      PRE_CREATE_DB: cadvisor
+    expose:
+      - 8083
+      - 8086
+    volumes:
+      - influxdb_data:/data
+
+  cadvisor:
+    image: google/cadvisor:v0.33.0
+    container_name: cadvisor
+    command:
+      - -storage_driver=influxdb
+      - -storage_driver_db=cadvisor
+      - -storage_driver_host=influxdb:8086
+    expose:
+      - 8080
+    volumes:
+      - /:/rootfs:ro
+      - /var/run:/var/run:rw
+      - /sys:/sys:ro
+
+  node-exporter:
+    image: prom/node-exporter:latest
+    container_name: prometheus_node_exporter
+    expose:
+      - 9100

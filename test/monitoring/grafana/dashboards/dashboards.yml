@@ -1,0 +1,11 @@
+apiVersion: 1
+
+providers:
+- name: 'docker'
+  orgId: 1
+  folder: 'Docker'
+  type: file
+  disableDeletion: true
+  editable: true
+  options:
+    path: /mnt/docker-dashboards
