@@ -1,0 +1,42 @@
+version: '3'
+
+services:
+
+  reload_grafanas:
+    image: dreampathsprojekt/livereloading
+    container_name: reload_grafanas
+    privileged: true
+    environment:
+      - RELOAD_DELAY=2 # seconds
+      - RESTART_TIMEOUT=1
+      - RELOAD_LABEL=reload.grafana
+      - OBSERVER_TYPE=0 # standard = 0, polling = 1
+    volumes:
+      - "/var/run/docker.sock:/var/run/docker.sock"
+      - ./grafana/:/grafana:ro
+
+  reload_grafana_dashboards:
+    image: dreampathsprojekt/livereloading
+    container_name: reload_grafana_dashboards
+    privileged: true
+    environment:
+      - RELOAD_DELAY=2 # seconds
+      - RESTART_TIMEOUT=1
+      - RELOAD_CONTAINER=grafana
+      - OBSERVER_TYPE=0 # standard = 0, polling = 1
+    volumes:
+      - "/var/run/docker.sock:/var/run/docker.sock"
+      - ./grafana-dashboards/docker-dashboards:/docker-dashboards:ro
+
+  restart_prometheus:
+    image: dreampathsprojekt/livereloading
+    container_name: restart_prometheus
+    privileged: true
+    environment:
+      - RELOAD_DELAY=2 # seconds
+      - RESTART_TIMEOUT=1
+      - RELOAD_CONTAINER=prometheus
+      - OBSERVER_TYPE=0 # standard = 0, polling = 1
+    volumes:
+      - "/var/run/docker.sock:/var/run/docker.sock"
+      - ./prometheus:/prometheus:ro
