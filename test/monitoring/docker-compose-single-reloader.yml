@@ -3,7 +3,7 @@ version: '3'
 services:
 
   monitoring_watcher:
-    image: dreampathsprojekt/livereloading
+    image: apogiatzis/livereloading
     container_name: monitoring_watcher
     privileged: true
     environment:

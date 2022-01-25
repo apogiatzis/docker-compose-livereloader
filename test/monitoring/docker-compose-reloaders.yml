@@ -3,7 +3,7 @@ version: '3'
 services:
 
   reload_grafanas:
-    image: dreampathsprojekt/livereloading
+    image: apogiatzis/livereloading
     container_name: reload_grafanas
     privileged: true
     environment:
@@ -16,7 +16,7 @@ services:
       - ./grafana/:/grafana:ro
 
   reload_grafana_dashboards:
-    image: dreampathsprojekt/livereloading
+    image: apogiatzis/livereloading
     container_name: reload_grafana_dashboards
     privileged: true
     environment:
@@ -29,7 +29,7 @@ services:
       - ./grafana-dashboards/docker-dashboards:/docker-dashboards:ro
 
   restart_prometheus:
-    image: dreampathsprojekt/livereloading
+    image: apogiatzis/livereloading
     container_name: restart_prometheus
     privileged: true
     environment:
