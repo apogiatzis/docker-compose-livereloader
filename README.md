@@ -82,7 +82,7 @@ can be set with `RELOAD_DIR`
    not mounted, reloading will work but code changes will not be applied to restarted
    container)
 
-Assuming that you don't have the source code mounted already and container name is
+2. Assuming that you don't have the source code mounted already and container name is
 differently you can add the following in your new docker-compose file to override it.
 i.e:
 
@@ -101,6 +101,11 @@ services:
 3. Run your docker compose with live reloading using the following command:
 
 `docker-compose -f docker-compose.yml -f docker-compose-with-reloading.yml up`
+
+Multiple directories can be watched, either by:
+
+- Multiple volume mounts, will be picked up automatically.
+- Or using a comma separated list of dirs (without spaces) as a value of `RELOAD_DIR`. All dirs in `RELOAD_DIR` have to be also mounted on the reloader container, for the watcher to work.
 
 ## Simple Example
 
@@ -228,6 +233,7 @@ services:
 ```
 
 Full details can be found on [test/monitoring/docker-compose.yml](test/monitoring/docker-compose.yml)
+All examples are __runnable.__ At any point you can take a look at the dashboards for `grafana`, `grafana_barebones` & `prometheus` opening your browser at [http://localhost:3000](http://localhost:3000) [http://localhost:3001](http://localhost:3001) and/or [http://localhost:9090](http://localhost:3000)
 
 ### Example - Single reloader, single folder - Multiple services
 
@@ -238,7 +244,7 @@ To achieve this we can add a single reloader, mount to it the [datasources share
 ```yml
 services:
   reload_grafanas:
-    image: dreampathsprojekt/livereloading
+    image: apogiatzis/livereloading
     container_name: reload_grafanas
     privileged: true
     environment:
@@ -299,7 +305,7 @@ To achieve 1 to 1 combination of reloaders to containers, we use 2 reloader serv
 ```yml
 services:
   reload_grafana_dashboards:
-    image: dreampathsprojekt/livereloading
+    image: apogiatzis/livereloading
     container_name: reload_grafana_dashboards
     privileged: true
     environment:
@@ -312,7 +318,7 @@ services:
       - ./grafana-dashboards/docker-dashboards:/docker-dashboards:ro
 
   restart_prometheus:
-    image: dreampathsprojekt/livereloading
+    image: apogiatzis/livereloading
     container_name: restart_prometheus
     privileged: true
     environment:
@@ -384,7 +390,7 @@ Once again we use a common existing `RELOAD_LABEL` `single.reload` to target con
 ```yml
 services:
   monitoring_watcher:
-    image: dreampathsprojekt/livereloading
+    image: apogiatzis/livereloading
     container_name: monitoring_watcher
     privileged: true
     environment:
