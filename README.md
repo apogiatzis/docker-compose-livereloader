@@ -78,16 +78,11 @@ code directory to a directory in the container. If no `RELOAD_DIR` variable was 
 livereloader automatically watches for changes in that directory. A more explicit path
 can be set with `RELOAD_DIR`
 
-Multiple directories can be watched, either by:
-
-- Multiple volume mounts
-- Or using a comma separated list (without spaces) asa value of `RELOAD_DIR`. All dirs in `RELOAD_DIR` have to be also mounted on the reloader container, for the watcher to work.
-
 1. Ensure that the code's directory is mounted to your service container as well. (If
    not mounted, reloading will work but code changes will not be applied to restarted
    container)
 
-Assuming that you don't have the source code mounted already and container name is
+2. Assuming that you don't have the source code mounted already and container name is
 differently you can add the following in your new docker-compose file to override it.
 i.e:
 
@@ -106,6 +101,11 @@ services:
 3. Run your docker compose with live reloading using the following command:
 
 `docker-compose -f docker-compose.yml -f docker-compose-with-reloading.yml up`
+
+Multiple directories can be watched, either by:
+
+- Multiple volume mounts, will be picked up automatically.
+- Or using a comma separated list of dirs (without spaces) as a value of `RELOAD_DIR`. All dirs in `RELOAD_DIR` have to be also mounted on the reloader container, for the watcher to work.
 
 ## Simple Example
 
